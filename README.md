@@ -7,3 +7,5 @@ We found the dataset of Housing prices on the following website and address:
 Projects is managed using git in Rstudio.(my first commit)
 
 Jad is working on project and Corentin se branle
+
+C la bataille des pull push
