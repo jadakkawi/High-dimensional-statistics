@@ -8,8 +8,6 @@ Projects is managed using git in Rstudio.(my first commit)
 
 Jad is working on project and Corentin se branle
 
-<<<<<<< HEAD
-C la bataille des pull push
-=======
 well bring it on motherfucker
->>>>>>> 40ec4ff2b11515dc6254f7cbb58533978ff29ba1
+
+C la bataille des pull push
