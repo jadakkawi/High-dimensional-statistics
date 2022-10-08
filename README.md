@@ -10,3 +10,5 @@ Corentin M
 =======
 Projects is managed using git in Rstudio.(my first commit)
 >>>>>>> a95a801 ((1st readme update from Rstudio))
+
+
