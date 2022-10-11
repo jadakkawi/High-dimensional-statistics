@@ -29,7 +29,6 @@ library(naniar)
 ggplot(air_quality_data,aes(x=AH,y=RH))+ geom_miss_point()
 
 
-
 detach(air_quality_data)
 
 
