@@ -1,4 +1,11 @@
-jados<-read.table("house-prices.txt",header=TRUE,sep="\t",stringsAsFactors=TRUE)
-attach(jados)
-summary(jados)
-detach(jados)
+data<-read.table("airqualityuci.csv",header=TRUE,sep=";",stringsAsFactors=TRUE)
+
+attach(data)
+summary(data)
+library(visdat)
+vis_miss(data)
+vis_dat(data)
+library(naniar)
+# https://upset.app/
+gg_miss_upset(data)
+detach(data)
