@@ -2,7 +2,8 @@ library(ggplot2)
 library(naniar)
 library(visdat)
 
-air_quality_data<-read.table("AirQuality.csv",header=TRUE,sep=";",stringsAsFactors=TRUE)
+#air_quality_data <- read.table("AirQuality.csv",header=TRUE,sep=";",stringsAsFactors=TRUE)
+air_quality_data <- read.table('AirQuality.csv', dec=",", sep=";" , header=TRUE, stringsAsFactors=TRUE)
 attach(air_quality_data)
 
 dim(air_quality_data)
@@ -19,6 +20,15 @@ air_quality_data <- subset (air_quality_data, select = -X.1)
 
 # "Missing values are tagged with -200 value" => -200<-NA
 air_quality_data[air_quality_data == -200]<- NA
+dim(air_quality_data)
+
+#apply(apply(air_quality_data, 2, gsub, patt=",", replace="."), 2, as.numeric)
+#gsub(",", ".",air_quality_data[str_contains(air_quality_data,",")])
+#format(var1, decimal.mark = '.')
+#air_quality_data[air_quality_data == '']<- NA
+#air_quality_data <- replace(air_quality_data, air_quality_data=='', NA)
+
+dim(air_quality_data)
 
 summary(air_quality_data)
 
