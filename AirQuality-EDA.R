@@ -10,13 +10,13 @@ dim(air_quality_data)
 summary(air_quality_data)
 
 # Remove column x & x.1
-air_quality_datat <- subset (air_quality_data, select = -X)
-air_quality_datat <- subset (air_quality_data, select = -X.1)
+air_quality_data <- subset (air_quality_data, select = -X)
+air_quality_data <- subset (air_quality_data, select = -X.1)
 
 # "Missing values are tagged with -200 value" => -200<-NA
-air_quality_datat[air_quality_datat == -200]<- NA
+air_quality_datat[air_quality_data == -200]<- NA
 
-summary(air_quality_datat)
+summary(air_quality_data)
 
 # Vizualize missing values
 library(visdat)
