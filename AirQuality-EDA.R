@@ -1,10 +1,10 @@
 air_quality_data<-read.table("AirQuality.csv",header=TRUE,sep=";",stringsAsFactors=TRUE)
 attach(air_quality_data)
 
-dim(air_quality_datat)
+dim(air_quality_data)
 
 # Select the 500 random samples
-air_quality_datat<-air_quality_datat[sample(nrow(air_quality_datat), 500), ]
+air_quality_data<-air_quality_datat[sample(nrow(air_quality_data), 500), ]
 dim(air_quality_data)
 
 summary(air_quality_data)
