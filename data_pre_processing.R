@@ -7,7 +7,8 @@
 #     - Merle Corentin 
 #     - Jad Akkawi
 
-air_quality_data = read.table('AirQuality.csv', dec=",", sep=";" , header=TRUE, stringsAsFactors=TRUE)
+air_quality_data = read.table('AirQuality.csv', dec=",", sep=";", 
+                              header=TRUE, stringsAsFactors=TRUE)
 attach(air_quality_data)
 
 dim(air_quality_data)
@@ -49,7 +50,7 @@ air_quality_data$AH[air_quality_data$AH >= threshold]<- TRUE
 attach(air_quality_data)
 
 # Save the new dataset
-write.table(air_quality_data, file="preProcessAirQuality.csv", sep = ";", dec = ".",
-            row.names = TRUE, col.names = TRUE)
+write.table(air_quality_data, file="preProcessAirQuality.csv", sep = ";", 
+            dec = ".", row.names = TRUE, col.names = TRUE)
 
 detach(air_quality_data)

@@ -22,7 +22,11 @@ air_quality_data <- subset (air_quality_data, select = -X.1)
 
 # "Missing values are tagged with -200 value" => -200<-NA
 air_quality_data[air_quality_data == -200]<- NA
+
 dim(air_quality_data)
+summary(air_quality_data)
+
+attach(air_quality_data)
 
 #apply(apply(air_quality_data, 2, gsub, patt=",", replace="."), 2, as.numeric)
 #gsub(",", ".",air_quality_data[str_contains(air_quality_data,",")])
@@ -30,33 +34,13 @@ dim(air_quality_data)
 #air_quality_data[air_quality_data == '']<- NA
 #air_quality_data <- replace(air_quality_data, air_quality_data=='', NA)
 
-dim(air_quality_data)
-
-summary(air_quality_data)
-
 # Vizualize missing values
 vis_miss(air_quality_data)
 vis_dat(air_quality_data)
 gg_miss_upset(air_quality_data)
-
-step = 40
-AH_x = air_quality_data$AH[seq(0, 500, by=step)]
-RH_y = air_quality_data$RH[seq(0, 500, by=step)]
-plt = ggplot(air_quality_data,aes(x=NMHC.GT.,y=C6H6.GT.)) + geom_miss_point() 
-
-plt = ggplot(air_quality_data,aes(x=NMHC.GT.,y=NOx.GT.)) + geom_miss_point() 
-
-plt + scale_x_discrete(breaks=AH_x) + scale_y_discrete(labels=seq(0, 500, by=step))
- 
-plt + element_text(size = 14)
-                                                                     
-air_quality_data$RH
-
-plt
+ggplot(air_quality_data,aes(x=NMHC.GT.,y=C6H6.GT.)) + geom_miss_point() 
 
 # -----------------------------------------
-
-attach(air_quality_data)
 
 hist(CO.GT.)
 hist(PT08.S1.CO.)
@@ -75,17 +59,55 @@ hist(AH)
 # -----------------------------------------
 
 cor1<-cor(cbind(CO.GT.,PT08.S1.CO.,NMHC.GT.,C6H6.GT.,PT08.S2.NMHC., NOx.GT., PT08.S3.NOx., NO2.GT., PT08.S4.NO2., PT08.S5.O3., RH, AH, T),use="complete.obs")
-cor2<-cor(cbind(Length,Width,Height,Price,Loss),use="pairwise.complete.obs")
+cor2<-cor(cbind(CO.GT.,PT08.S1.CO.,NMHC.GT.,C6H6.GT.,PT08.S2.NMHC., NOx.GT., PT08.S3.NOx., NO2.GT., PT08.S4.NO2., PT08.S5.O3., RH, AH, T),use="pairwise.complete.obs")
 cor1
 cor2
 
 corrplot(cor1)
 corrplot(cor2)
 
+#------------------------------------------
+
+#After the correlation analysis, we know that the most "favorable" variable 
+#to use in order to get information on Loss is the variable Height, with a correlation of -0.43
+#even though the correlation remains low.
+
+Imputed<-NMHC.GT.
+coef<-lm(NMHC.GT.~C6H6.GT.)$coefficients
+
+#It was enought to look at the output of the function lm and directly use the 
+#estimations of the slope and the intercept, instead of using the output "coefficients"
+
+for (i in 1:length(Imputed))
+{
+  
+  if (is.na(Imputed[i]))
+  {Imputed[i]<-coef[1]+coef[2]*C6H6.GT.[i]}
+}
+
+#The loop might be replaced by
+Imputed<-NMHC.GT.
+Imputed[which(is.na(Imputed))]<-coef[1]+coef[2]*C6H6.GT.[which(is.na(Imputed))]
+#where the use of the function which is explained by the fact that we need to identify 
+#the coordinates of Height to use.
+
+boxplot(NMHC.GT., Imputed)
+
+summary(cbind(NMHC.GT., Imputed))
+
+plot(NMHC.GT.,C6H6.GT.)
+plot(Imputed,C6H6.GT.)
+
+plot(PT08.S3.NOx., NOx.GT.)
+
+plot(NMHC.GT., PT08.S4.NO2.)
+
+plot(C6H6.GT., PT08.S1.CO.)
+
 skewness(cbind(CO.GT.,PT08.S1.CO.,NMHC.GT.))
 kurtosis(cbind(CO.GT.,PT08.S1.CO.,NMHC.GT.))
 
-
+summary(air_quality_data)
 detach(air_quality_data)
 
 
