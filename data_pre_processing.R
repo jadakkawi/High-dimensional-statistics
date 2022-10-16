@@ -43,8 +43,9 @@ summary(air_quality_data)
 
 # Generate the binary attribute from the quantitative attribute AH
 threshold = 0.75
-air_quality_data$AH[air_quality_data$AH < threshold]<- FALSE
-air_quality_data$AH[air_quality_data$AH >= threshold]<- TRUE
+air_quality_data$AH_bin[air_quality_data$AH < threshold]<- 0
+air_quality_data$AH_bin[air_quality_data$AH >= threshold]<- 1
+
 
 
 attach(air_quality_data)
@@ -52,5 +53,20 @@ attach(air_quality_data)
 # Save the new dataset
 write.table(air_quality_data, file="preProcessAirQuality.csv", sep = ";", 
             dec = ".", row.names = TRUE, col.names = TRUE)
+
+hist(CO.GT.)
+hist(PT08.S1.CO.)
+hist(NMHC.GT.)
+hist(C6H6.GT.)
+hist(PT08.S2.NMHC.)
+hist(NOx.GT.)
+hist(PT08.S3.NOx.)
+hist(NO2.GT.)
+hist(PT08.S4.NO2.)
+hist(PT08.S5.O3.)
+hist(T)
+hist(RH)
+hist(AH)
+barplot(table(AH_bin))
 
 detach(air_quality_data)
