@@ -19,7 +19,7 @@ gg_miss_upset(air_quality_data)
 
 ggplot(air_quality_data,aes(x=NMHC.GT.,y=C6H6.GT.)) + geom_miss_point() 
 
-<<<<<<< HEAD
+
 ## We can see from the plot that most missing values are "non metanic hydrocarbure" 103/133 cases 
 ## NOx and NO2  are missing together 22/133 times
 ## CO is missing 18/133 times
@@ -32,7 +32,7 @@ air_quality_data[which(is.na(NO2.GT.)),]
 # plotting NMHC missing values for inferring reasons
 air_quality_data[which(is.na(NMHC.GT.)),]
 ## we realize that from 18th till 20th of Mars these elements weren't measured
-=======
+
 # Compare missingness correlation
 
 cor1<-cor(cbind(CO.GT.,PT08.S1.CO.,NMHC.GT.,C6H6.GT.,PT08.S2.NMHC., NOx.GT., PT08.S3.NOx., NO2.GT., PT08.S4.NO2., PT08.S5.O3., RH, AH, T),use="complete.obs")
@@ -80,4 +80,4 @@ summary(cbind(CO.GT., Imputed))
 
 
 
->>>>>>> 1d3db93ea0b425d80f90245602a2ec6a7bcef791
+
