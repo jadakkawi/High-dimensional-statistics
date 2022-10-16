@@ -33,10 +33,15 @@ air_quality_data[which(is.na(NO2.GT.)),]
 air_quality_data[which(is.na(NMHC.GT.)),]
 ## we realize that from 18th till 20th of Mars these elements weren't measured
 
+# plotting CO missing values for inferring reasons
+air_quality_data[which(is.na(CO.GT.)),]
+## we realize that during the month of march at 4:00 AM the reference center 
+## did not  measure any data regarding CO maybe because the machines were resetting
+
 # Compare missingness correlation
 
-cor1<-cor(cbind(CO.GT.,PT08.S1.CO.,NMHC.GT.,C6H6.GT.,PT08.S2.NMHC., NOx.GT., PT08.S3.NOx., NO2.GT., PT08.S4.NO2., PT08.S5.O3., RH, AH, T),use="complete.obs")
-cor2<-cor(cbind(CO.GT.,PT08.S1.CO.,NMHC.GT.,C6H6.GT.,PT08.S2.NMHC., NOx.GT., PT08.S3.NOx., NO2.GT., PT08.S4.NO2., PT08.S5.O3., RH, AH, T),use="pairwise.complete.obs")
+cor1<-cor(cbind(CO.GT.,PT08.S1.CO.,NMHC.GT.,C6H6.GT.,PT08.S2.NMHC., NOx.GT., PT08.S3.NOx., NO2.GT., PT08.S4.NO2., PT08.S5.O3., RH, AH, AH_bin, T),use="complete.obs")
+cor2<-cor(cbind(CO.GT.,PT08.S1.CO.,NMHC.GT.,C6H6.GT.,PT08.S2.NMHC., NOx.GT., PT08.S3.NOx., NO2.GT., PT08.S4.NO2., PT08.S5.O3., RH, AH, AH_bin, T),use="pairwise.complete.obs")
 
 cor1
 cor2
@@ -44,39 +49,43 @@ cor2
 corrplot(cor1)
 corrplot(cor2)
 
-# There are missing values in CO.GT., NMHC.GT., NOx.GT. and NO2.GT.
+
 # => Imputation with respect to the best correlation
 
-## CO.GT. ~ C6H6.GT.
-
-Imputed = CO.GT.
+## CO.GT. ~ C6H6.GT. corr= 0.9810
+Imputed_CO = CO.GT.
 coef = lm(CO.GT.~C6H6.GT.)$coefficients
-
-#It was enought to look at the output of the function lm and directly use the 
-#estimations of the slope and the intercept, instead of using the output "coefficients"
-
-for (i in 1:length(Imputed))
-{
-  
-  if (is.na(Imputed[i]))
-  {Imputed[i]<-coef[1]+coef[2]*C6H6.GT.[i]}
-}
-
-#The loop might be replaced by
-Imputed<-CO.GT.
-Imputed[which(is.na(Imputed))]<-coef[1]+coef[2]*C6H6.GT.[which(is.na(Imputed))]
-#where the use of the function which is explained by the fact that we need to identify 
-#the coordinates of Height to use.
-
-boxplot(CO.GT., Imputed)
-
-summary(cbind(CO.GT., Imputed))
-
-## NMHC.GT. ~ ???
-
-## NOx.GT. ~ ???
-
-## NO2.GT. ~ ???
+Imputed_CO[which(is.na(Imputed_CO))]<-coef[1]+coef[2]*C6H6.GT.[which(is.na(Imputed_CO))]
+air_quality_data = cbind(air_quality_data,Imputed_CO)
+summary(cbind(CO.GT., Imputed_CO))
+ggplot(air_quality_data,aes(x=CO.GT.,y=Imputed_CO)) + geom_miss_point()
+#
+##
+## NMHC.GT. ~ C6H6.GT. corr = 0.8621
+Imputed_NMHC = NMHC.GT.
+coef = lm(NMHC.GT.~C6H6.GT.)$coefficients
+Imputed_NMHC[which(is.na(Imputed_NMHC))]<-coef[1]+coef[2]*C6H6.GT.[which(is.na(Imputed_NMHC))]
+air_quality_data = cbind(air_quality_data,Imputed_NMHC)
+summary(cbind(NMHC.GT., Imputed_NMHC))
+ggplot(air_quality_data,aes(x=NMHC.GT.,y=Imputed_NMHC)) + geom_miss_point()
+#
+##
+## NOx.GT. ~ CO.GT.(OR RATHER imputed_CO because it has no NA's) corr = 0.9575
+Imputed_NOx = NOx.GT.
+coef = lm(NOx.GT.~Imputed_CO)$coefficients
+Imputed_NOx[which(is.na(Imputed_NOx))]<-coef[1]+coef[2]*Imputed_CO[which(is.na(Imputed_NOx))]
+air_quality_data = cbind(air_quality_data,Imputed_NOx)
+summary(cbind(NOx.GT., Imputed_NOx))
+ggplot(air_quality_data,aes(x=CO.GT.,y=Imputed_NOx)) + geom_miss_point()
+#
+#
+## NO2.GT. ~ PT08.S2.NMHC. corr = 0.9003
+Imputed_NO2 = NO2.GT.
+coef = lm(NO2.GT.~PT08.S2.NMHC.)$coefficients
+Imputed_NO2[which(is.na(Imputed_NO2))]<-coef[1]+coef[2]*PT08.S2.NMHC.[which(is.na(Imputed_NO2))]
+air_quality_data = cbind(air_quality_data,Imputed_NO2)
+summary(cbind(NO2.GT., Imputed_NO2))
+ggplot(air_quality_data,aes(x=CO.GT.,y=Imputed_NO2)) + geom_miss_point()
 
 
 
