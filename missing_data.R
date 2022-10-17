@@ -98,11 +98,11 @@ hist(CO.GT., col="darkgreen", add=TRUE)
 hist(Imputed_NMHC, col="blue2", 
      main = paste("NMHC.GT. & imputed NMHC.GT. histogram"), xlab="NMHC")
 hist(NMHC.GT., col="darkgreen", add=TRUE)
-
+ 
 hist(Imputed_NOx, col="blue2", 
      main = paste("NOx.GT. & imputed NOx.GT. histogram"), xlab="NOx")
 hist(NOx.GT., col="darkgreen", add=TRUE)
-
+ 
 hist(Imputed_NO2, col="blue2", 
      main = paste("NO2.GT. & imputed NO2.GT. histogram"), xlab="NO2")
 hist(NO2.GT., col="darkgreen", add=TRUE)
@@ -119,3 +119,4 @@ write.table(air_quality_data, file="cleanAirQuality.csv", sep = ";",
             dec = ".", row.names = TRUE, col.names = TRUE)
 
 detach(air_quality_data)
+
