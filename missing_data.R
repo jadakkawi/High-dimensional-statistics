@@ -107,16 +107,21 @@ hist(Imputed_NO2, col="blue2",
      main = paste("NO2.GT. & imputed NO2.GT. histogram"), xlab="NO2")
 hist(NO2.GT., col="darkgreen", add=TRUE)
 
-air_quality_data$CO.GT. = Imputed_CO
-air_quality_data$NMHC.GT. = Imputed_NMHC
-air_quality_data$NOx.GT. = Imputed_NOx
-air_quality_data$NO2.GT. = Imputed_NO2
+#air_quality_data$CO.GT. = Imputed_CO
+#air_quality_data$NMHC.GT. = Imputed_NMHC
+#air_quality_data$NOx.GT. = Imputed_NOx
+#air_quality_data$NO2.GT. = Imputed_NO2
 
 attach(air_quality_data)
 
 # Save the new dataset
-write.table(air_quality_data, file="cleanAirQuality.csv", sep = ";", 
-            dec = ".", row.names = TRUE, col.names = TRUE)
+write.table(cbind(Date, Time, Imputed_CO, PT08.S1.CO., Imputed_NMHC, C6H6.GT., 
+                  PT08.S2.NMHC., Imputed_NOx, PT08.S3.NOx., Imputed_NO2, 
+                  PT08.S4.NO2., PT08.S5.O3., T, RH, AH_bin), 
+            file="cleanAirQuality.csv", sep = ";", 
+            dec = ".", 
+            row.names = TRUE, 
+            col.names = TRUE)
 
 detach(air_quality_data)
 
