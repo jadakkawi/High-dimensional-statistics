@@ -115,8 +115,8 @@ hist(NO2.GT., col="darkgreen", add=TRUE)
 attach(air_quality_data)
 
 # Save the new dataset
-write.table(cbind(Date, Time, Imputed_CO, PT08.S1.CO., Imputed_NMHC, C6H6.GT., 
-                  PT08.S2.NMHC., Imputed_NOx, PT08.S3.NOx., Imputed_NO2, 
+write.table(cbind(Date, Time, CO.GT.=Imputed_CO, PT08.S1.CO., NMHC.GT.=Imputed_NMHC, C6H6.GT., 
+                  PT08.S2.NMHC., NOx.GT.=Imputed_NOx, PT08.S3.NOx., NO2.GT.=Imputed_NO2, 
                   PT08.S4.NO2., PT08.S5.O3., T, RH, AH_bin), 
             file="cleanAirQuality.csv", sep = ";", 
             dec = ".", 
