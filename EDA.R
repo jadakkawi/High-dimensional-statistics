@@ -1,0 +1,15 @@
+# MATH2021-1 - High-dimensional statistics
+# University of Liège
+# Academic year 2022-2023
+# Project : Exploratory data analysis
+# File : ???????????????????????????????????????????????
+# Authors :
+#     - Merle Corentin 
+#     - Jad Akkawi
+library(visdat)
+
+air_quality_data <- read.table('cleanAirQuality.csv', sep=";" , 
+                               header=TRUE, stringsAsFactors=TRUE)
+
+summary(air_quality_data)
+dim(air_quality_data)

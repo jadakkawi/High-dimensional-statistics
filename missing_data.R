@@ -59,6 +59,7 @@ Imputed_CO[which(is.na(Imputed_CO))]<-coef[1]+coef[2]*C6H6.GT.[which(is.na(Imput
 air_quality_data = cbind(air_quality_data,Imputed_CO)
 summary(cbind(CO.GT., Imputed_CO))
 ggplot(air_quality_data,aes(x=CO.GT.,y=Imputed_CO)) + geom_miss_point()
+boxplot(CO.GT., Imputed_CO, col=(c("darkgreen","blue2")), names=(c("CO.GT.", "Imputed CO.GT.")))
 #
 ##
 ## NMHC.GT. ~ C6H6.GT. corr = 0.8621
@@ -68,6 +69,7 @@ Imputed_NMHC[which(is.na(Imputed_NMHC))]<-coef[1]+coef[2]*C6H6.GT.[which(is.na(I
 air_quality_data = cbind(air_quality_data,Imputed_NMHC)
 summary(cbind(NMHC.GT., Imputed_NMHC))
 ggplot(air_quality_data,aes(x=NMHC.GT.,y=Imputed_NMHC)) + geom_miss_point()
+boxplot(NMHC.GT., Imputed_NMHC, col=(c("darkgreen","blue2")), names=(c("NMHC.GT.", "Imputed NMHC.GT.")))
 #
 ##
 ## NOx.GT. ~ CO.GT.(OR RATHER imputed_CO because it has no NA's) corr = 0.9575
@@ -76,7 +78,8 @@ coef = lm(NOx.GT.~Imputed_CO)$coefficients
 Imputed_NOx[which(is.na(Imputed_NOx))]<-coef[1]+coef[2]*Imputed_CO[which(is.na(Imputed_NOx))]
 air_quality_data = cbind(air_quality_data,Imputed_NOx)
 summary(cbind(NOx.GT., Imputed_NOx))
-ggplot(air_quality_data,aes(x=CO.GT.,y=Imputed_NOx)) + geom_miss_point()
+ggplot(air_quality_data,aes(x=NOx.GT.,y=Imputed_NOx)) + geom_miss_point()
+boxplot(NOx.GT., Imputed_NOx, col=(c("darkgreen","blue2")), names=(c("NOx.GT.", "Imputed NOx.GT.")))
 #
 #
 ## NO2.GT. ~ PT08.S2.NMHC. corr = 0.9003
@@ -85,8 +88,34 @@ coef = lm(NO2.GT.~PT08.S2.NMHC.)$coefficients
 Imputed_NO2[which(is.na(Imputed_NO2))]<-coef[1]+coef[2]*PT08.S2.NMHC.[which(is.na(Imputed_NO2))]
 air_quality_data = cbind(air_quality_data,Imputed_NO2)
 summary(cbind(NO2.GT., Imputed_NO2))
-ggplot(air_quality_data,aes(x=CO.GT.,y=Imputed_NO2)) + geom_miss_point()
+ggplot(air_quality_data,aes(x=NO2.GT.,y=Imputed_NO2)) + geom_miss_point()
+boxplot(NO2.GT., Imputed_NO2, col=(c("darkgreen","blue2")), names=(c("NO2.GT.", "Imputed NO2.GT.")))
 
+hist(Imputed_CO, col="blue2", 
+     main = paste("CO.GT. & imputed CO.GT. histogram"), xlab="CO")
+hist(CO.GT., col="darkgreen", add=TRUE)
 
+hist(Imputed_NMHC, col="blue2", 
+     main = paste("NMHC.GT. & imputed NMHC.GT. histogram"), xlab="NMHC")
+hist(NMHC.GT., col="darkgreen", add=TRUE)
 
+hist(Imputed_NOx, col="blue2", 
+     main = paste("NOx.GT. & imputed NOx.GT. histogram"), xlab="NOx")
+hist(NOx.GT., col="darkgreen", add=TRUE)
 
+hist(Imputed_NO2, col="blue2", 
+     main = paste("NO2.GT. & imputed NO2.GT. histogram"), xlab="NO2")
+hist(NO2.GT., col="darkgreen", add=TRUE)
+
+air_quality_data$CO.GT. = Imputed_CO
+air_quality_data$NMHC.GT. = Imputed_NMHC
+air_quality_data$NOx.GT. = Imputed_NOx
+air_quality_data$NO2.GT. = Imputed_NO2
+
+attach(air_quality_data)
+
+# Save the new dataset
+write.table(air_quality_data, file="cleanAirQuality.csv", sep = ";", 
+            dec = ".", row.names = TRUE, col.names = TRUE)
+
+detach(air_quality_data)
