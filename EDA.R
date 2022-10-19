@@ -9,6 +9,32 @@
 
 library(visdat) 
 library(MASS)
+library(robustbase)
+
+################################################################################
+
+# Normalize dataframe function
+
+normalizeDF <- function(x) {
+  
+  new_columns = c()
+  
+  for (name in names(x)) {
+    new_col = (x[name]-min(x[name]))/(max(x[name])-min(x[name]))
+    new_columns = append(new_columns, new_col, after=length(new_columns))
+  }
+  
+  return(data.frame(new_columns))
+}
+
+a = normalizeDF(air_quality_data)
+
+summary(a)
+summary(air_quality_data)
+
+################################################################################
+
+# Plot (histogram + distribution) functions
 
 plotAndSaveHistNorm <- function(x, name=name) {
   
@@ -26,7 +52,6 @@ plotAndSaveHistNorm <- function(x, name=name) {
   dev.off()
   
   print(paste(name, " : MLE = ", BIC(fitdistr(na.omit(x), densfun="normal"))))
-  
 }
 
 plotAndSaveHistPoisson <- function(x, name=name) {
@@ -48,9 +73,6 @@ plotAndSaveHistPoisson <- function(x, name=name) {
   
   dev.copy(pdf, paste("Plots/hist_poisson_", name, ".pdf"), width=20, height=11) 
   dev.off()
-  
-  
-  
 }
 
 plotAndSaveHistLogNormal <- function(x, name=name) {
@@ -74,35 +96,127 @@ plotAndSaveHistLogNormal <- function(x, name=name) {
   
   dev.copy(pdf, paste("Plots/hist_logNormal_", name, ".pdf"), width=20, height=11) 
   dev.off()
-  
-  
-  
 }
+
+################################################################################
+
+air_quality_data = read.table('cleanAirQuality.csv', sep=";" , 
+                              header=TRUE, stringsAsFactors=TRUE)
 
 attach(air_quality_data)
 
 summary(air_quality_data)
 dim(air_quality_data)
 
-vis_miss(air_quality_data)
+# Boxplots
 
-# Historgrams + Normal 
+boxplot(cbind(air_quality_data["CO.GT."]), names=c("CO.GT."),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/boxplot_CO.GT.pdf"), width=20, height=11) 
+dev.off()
+
+boxplot(cbind(air_quality_data["NMHC.GT."]), names=c("NMHC.GT."),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/boxplot_NMHC.GT.pdf"), width=20, height=11) 
+dev.off()
+
+boxplot(cbind(air_quality_data["C6H6.GT."]), names=c("C6H6.GT."),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/boxplot_C6H6.GT.pdf"), width=20, height=11) 
+dev.off()
+
+boxplot(cbind(air_quality_data["NOx.GT."], 
+              air_quality_data["NO2.GT."]),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/boxplot_NOx-NO2.GT.pdf"), width=20, height=11) 
+dev.off()
+
+boxplot(cbind(air_quality_data["PT08.S1.CO."], air_quality_data["PT08.S2.NMHC."],
+              air_quality_data["PT08.S3.NOx."], 
+              air_quality_data["PT08.S4.NO2."],
+              air_quality_data["PT08.S5.O3."]), 
+        names=c("S1.CO.", "S2.NMHC.", "S3.NOx.","S4.NO2.", "S5.O3."), 
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/boxplot_S1-5.pdf"), width=20, height=11) 
+dev.off()
+
+## adjbox (apparently for skew distribution)
+
+adjbox(cbind(air_quality_data["CO.GT."]), names=c("CO.GT."),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/adjboxplot_CO.GT.pdf"), width=20, height=11) 
+dev.off()
+
+adjbox(cbind(air_quality_data["NMHC.GT."]), names=c("NMHC.GT."),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/adjboxplot_NMHC.GT.pdf"), width=20, height=11) 
+dev.off()
+
+adjbox(cbind(air_quality_data["C6H6.GT."]), names=c("C6H6.GT."),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/adjboxplot_C6H6.GT.pdf"), width=20, height=11) 
+dev.off()
+
+adjbox(cbind(air_quality_data["NOx.GT."], 
+              air_quality_data["NO2.GT."]),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/adjboxplot_NOx-NO2.GT.pdf"), width=20, height=11) 
+dev.off()
+
+adjbox(cbind(air_quality_data["PT08.S1.CO."], air_quality_data["PT08.S2.NMHC."],
+              air_quality_data["PT08.S3.NOx."], 
+              air_quality_data["PT08.S4.NO2."],
+              air_quality_data["PT08.S5.O3."]), 
+        names=c("S1.CO.", "S2.NMHC.", "S3.NOx.","S4.NO2.", "S5.O3."), 
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/adjboxplot_S1-5.pdf"), width=20, height=11) 
+dev.off()
+
+# Plot histogram
+
+## Historgrams + Normal 
 
 for (name in names(air_quality_data)){
   plotAndSaveHistNorm(air_quality_data[name], name=name)
 }
 
-# Historgrams + Poisson
+## Historgrams + Poisson
 
 for (name in names(air_quality_data)){
   plotAndSaveHistPoisson(air_quality_data[name], name=name)
 }
 
-# Historgrams + Log Normal
+## Histograms + Log Normal
 
 for (name in names(air_quality_data)){
   plotAndSaveHistLogNormal(air_quality_data[name], name=name)
 }
+
+# Outlying observations
+
+## With normalized data 
+
+noralized_air_quality_data = normalizeDF(air_quality_data[ ,3:length(air_quality_data)])
+
+m<-apply(noralized_air_quality_data,2,mean)
+S<-cov(noralized_air_quality_data)
+d3<-mahalanobis(noralized_air_quality_data,m,S)
+plot(seq(1:dim(noralized_air_quality_data)[1]),d3)
+abline(h=qchisq(0.95,13),col="red")
+dev.copy(pdf, paste("mahalanobis.pdf"), width=20, height=11) 
+dev.off()
+
+## 
+
+new_air_quality_data = air_quality_data[ ,3:length(air_quality_data)]
+
+m<-apply(new_air_quality_data,2,mean)
+S<-cov(new_air_quality_data)
+d3<-mahalanobis(new_air_quality_data,m,S)
+plot(seq(1:dim(new_air_quality_data)[1]),d3)
+abline(h=qchisq(0.95,13),col="red")
+
+identify(d3)   
 
 detach(air_quality_data)
 
