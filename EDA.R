@@ -2,123 +2,237 @@
 # University of Liège
 # Academic year 2022-2023
 # Project : Exploratory data analysis
-# File : ???????????????????????????????????????????????
+# File : EDA.R
 # Authors :
 #     - Merle Corentin 
 #     - Jad Akkawi
-library(visdat)
 
-air_quality_data <- read.table('cleanAirQuality.csv', sep=";" , 
-                               header=TRUE, stringsAsFactors=TRUE)
+library(visdat) 
+library(MASS)
+library(robustbase)
+
+################################################################################
+
+# Normalize dataframe function
+
+normalizeDF <- function(x) {
+  
+  new_columns = c()
+  
+  for (name in names(x)) {
+    new_col = (x[name]-min(x[name]))/(max(x[name])-min(x[name]))
+    new_columns = append(new_columns, new_col, after=length(new_columns))
+  }
+  
+  return(data.frame(new_columns))
+}
+
+a = normalizeDF(air_quality_data)
+
+summary(a)
+summary(air_quality_data)
+
+################################################################################
+
+# Plot (histogram + distribution) functions
+
+plotAndSaveHistNorm <- function(x, name=name) {
+  
+  x = as.numeric(unlist(x))
+  
+  hist = hist(x, col="darkgreen", freq=FALSE, breaks=20,
+              main = paste("Histogram of", name), xlab=name)
+  x_values <- seq(min(na.omit(x)), max(na.omit(x)), length = 100)
+  y_values <- dnorm(x_values, mean = mean(na.omit(x)), sd = sd(na.omit(x))) 
+  #y_values <- y_values * diff(hist$mids[1:2]) * length(x) 
+  
+  lines(x_values, y_values, lwd = 3, col="green")
+  
+  dev.copy(pdf, paste("Plots/hist_normal_",name,".pdf"), width=20, height=11)
+  dev.off()
+  
+  print(paste(name, " : MLE = ", BIC(fitdistr(na.omit(x), densfun="normal"))))
+}
+
+plotAndSaveHistPoisson <- function(x, name=name) {
+  
+  x = as.numeric(unlist(x))
+  
+  hist = hist(x, col="darkgreen", freq=FALSE, breaks=20,
+              main = paste("Histogram of", name), xlab=name)
+  x_values <- seq(floor(min(na.omit(x))), ceiling(max(na.omit(x))))
+  
+  estimate_param = fitdistr(na.omit(x), densfun="poisson")
+  print(paste(name, " : MLE = ", BIC(estimate_param)))
+  estimate_param = unlist(estimate_param)
+  
+  y_values <- dpois(x_values, 
+                    lambda=estimate_param["estimate.lambda"]) 
+  
+  lines(x_values, y_values, lwd = 3, col="green")
+  
+  dev.copy(pdf, paste("Plots/hist_poisson_", name, ".pdf"), width=20, height=11) 
+  dev.off()
+}
+
+plotAndSaveHistLogNormal <- function(x, name=name) {
+  
+  x = as.numeric(unlist(x))
+  
+  hist = hist(x, col="darkgreen", freq=FALSE, breaks=20,
+              main = paste("Histogram of", name), xlab=name)
+  x_values <- seq(min(na.omit(x)), max(na.omit(x)), length = 100)
+  
+  estimate_param = fitdistr(na.omit(x), densfun="lognormal")
+  print(paste(name, " : MLE = ", BIC(estimate_param)))
+  estimate_param = unlist(estimate_param)
+  
+  y_values <- dlnorm(x_values, 
+                     meanlog = estimate_param["estimate.meanlog"],
+                     sdlog = estimate_param["estimate.sdlog"], 
+                     log = FALSE) 
+  
+  lines(x_values, y_values, lwd = 3, col="green")
+  
+  dev.copy(pdf, paste("Plots/hist_logNormal_", name, ".pdf"), width=20, height=11) 
+  dev.off()
+}
+
+################################################################################
+
+air_quality_data = read.table('cleanAirQuality.csv', sep=";" , 
+                              header=TRUE, stringsAsFactors=TRUE)
+
+attach(air_quality_data)
 
 summary(air_quality_data)
 dim(air_quality_data)
 
-vis_miss(air_quality_data)
+# Boxplots
 
-# Historgrams + Normal 
+boxplot(cbind(air_quality_data["CO.GT."]), names=c("CO.GT."),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/boxplot_CO.GT.pdf"), width=20, height=11) 
+dev.off()
 
-## CO
+boxplot(cbind(air_quality_data["NMHC.GT."]), names=c("NMHC.GT."),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/boxplot_NMHC.GT.pdf"), width=20, height=11) 
+dev.off()
 
-hist_imputed = hist(Imputed_CO, col="blue2", 
-                    main = paste("CO.GT. & imputed CO.GT. histogram"), xlab="CO")
-hist = hist(CO.GT., col="darkgreen", add=TRUE)
+boxplot(cbind(air_quality_data["C6H6.GT."]), names=c("C6H6.GT."),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/boxplot_C6H6.GT.pdf"), width=20, height=11) 
+dev.off()
 
-x_values_imputed <- seq(min(Imputed_CO), max(Imputed_CO), length = 100)
-y_values_imputed <- dnorm(x_values_imputed, mean = mean(Imputed_CO), sd = sd(Imputed_CO)) 
-y_values_imputed <- y_values_imputed * diff(hist_imputed$mids[1:2]) * length(Imputed_CO) 
+boxplot(cbind(air_quality_data["NOx.GT."], 
+              air_quality_data["NO2.GT."]),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/boxplot_NOx-NO2.GT.pdf"), width=20, height=11) 
+dev.off()
 
-lines(x_values_imputed, y_values_imputed, lwd = 3, col="green")
+boxplot(cbind(air_quality_data["PT08.S1.CO."], air_quality_data["PT08.S2.NMHC."],
+              air_quality_data["PT08.S3.NOx."], 
+              air_quality_data["PT08.S4.NO2."],
+              air_quality_data["PT08.S5.O3."]), 
+        names=c("S1.CO.", "S2.NMHC.", "S3.NOx.","S4.NO2.", "S5.O3."), 
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/boxplot_S1-5.pdf"), width=20, height=11) 
+dev.off()
 
-x_values <- seq(min(na.omit(CO.GT.)), max(na.omit(CO.GT.)), length = 100)
-y_values <- dnorm(x_values, mean = mean(na.omit(CO.GT.)), sd = sd(na.omit(CO.GT.))) 
-y_values <- y_values * diff(hist$mids[1:2]) * length(CO.GT.) 
+## adjbox (apparently for skew distribution)
 
-lines(x_values, y_values, lwd = 3, col="blue")
+adjbox(cbind(air_quality_data["CO.GT."]), names=c("CO.GT."),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/adjboxplot_CO.GT.pdf"), width=20, height=11) 
+dev.off()
 
-hist(CO.GT., freq=FALSE)
-lines(density(na.omit(CO.GT.), bw=0.8), col="red")
-(my.mle<-fitdistr(na.omit(CO.GT.), densfun="poisson"))
-##      lambda  
-##   20.6700000 
-##  ( 0.4546427)
-BIC(my.mle)
+adjbox(cbind(air_quality_data["NMHC.GT."]), names=c("NMHC.GT."),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/adjboxplot_NMHC.GT.pdf"), width=20, height=11) 
+dev.off()
 
-## NMHC
+adjbox(cbind(air_quality_data["C6H6.GT."]), names=c("C6H6.GT."),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/adjboxplot_C6H6.GT.pdf"), width=20, height=11) 
+dev.off()
 
-hist_imputed = hist(Imputed_NMHC, col="blue2", 
-                    main = paste("NMHC.GT. & imputed NMHC.GT. histogram"), xlab="CO")
-hist = hist(NMHC.GT., col="darkgreen", add=TRUE)
+adjbox(cbind(air_quality_data["NOx.GT."], 
+              air_quality_data["NO2.GT."]),
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/adjboxplot_NOx-NO2.GT.pdf"), width=20, height=11) 
+dev.off()
 
-x_values_imputed <- seq(min(Imputed_NMHC), max(Imputed_NMHC), length = 100)
-y_values_imputed <- dnorm(x_values_imputed, mean = mean(Imputed_NMHC), sd = sd(Imputed_NMHC)) 
-y_values_imputed <- y_values_imputed * diff(hist_imputed$mids[1:2]) * length(Imputed_NMHC) 
+adjbox(cbind(air_quality_data["PT08.S1.CO."], air_quality_data["PT08.S2.NMHC."],
+              air_quality_data["PT08.S3.NOx."], 
+              air_quality_data["PT08.S4.NO2."],
+              air_quality_data["PT08.S5.O3."]), 
+        names=c("S1.CO.", "S2.NMHC.", "S3.NOx.","S4.NO2.", "S5.O3."), 
+        col="darkgreen")
+dev.copy(pdf, paste("Plots/adjboxplot_S1-5.pdf"), width=20, height=11) 
+dev.off()
 
-lines(x_values_imputed, y_values_imputed, lwd = 3, col="green")
+# Plot histogram
 
-x_values <- seq(min(na.omit(NMHC.GT.)), max(na.omit(NMHC.GT.)), length = 100)
-y_values <- dnorm(x_values, mean = mean(na.omit(NMHC.GT.)), sd = sd(na.omit(NMHC.GT.))) 
-y_values <- y_values * diff(hist$mids[1:2]) * length(NMHC.GT.) 
+## Historgrams + Normal 
 
-lines(x_values, y_values, lwd = 3, col="blue")
+for (name in names(air_quality_data)){
+  plotAndSaveHistNorm(air_quality_data[name], name=name)
+}
 
-## NOx
+## Historgrams + Poisson
 
-hist_imputed = hist(Imputed_NOx, col="blue2", 
-                    main = paste("NOx.GT. & imputed NOx.GT. histogram"), xlab="NOx")
-hist = hist(NOx.GT., col="darkgreen", add=TRUE)
+for (name in names(air_quality_data)){
+  plotAndSaveHistPoisson(air_quality_data[name], name=name)
+}
 
-x_values_imputed <- seq(min(Imputed_NOx), max(Imputed_NOx), length = 100)
-y_values_imputed <- dnorm(x_values_imputed, mean = mean(Imputed_NOx), sd = sd(Imputed_NOx)) 
-y_values_imputed <- y_values_imputed * diff(hist_imputed$mids[1:2]) * length(Imputed_NOx) 
+## Histograms + Log Normal
 
-lines(x_values_imputed, y_values_imputed, lwd = 3, col="green")
+for (name in names(air_quality_data)){
+  plotAndSaveHistLogNormal(air_quality_data[name], name=name)
+}
 
-x_values <- seq(min(na.omit(NOx.GT.)), max(na.omit(NOx.GT.)), length = 100)
-y_values <- dnorm(x_values, mean = mean(na.omit(NOx.GT.)), sd = sd(na.omit(NOx.GT.))) 
-y_values <- y_values * diff(hist$mids[1:2]) * length(NOx.GT.) 
+# Outlying observations
 
-lines(x_values, y_values, lwd = 3, col="blue")
+## With normalized data 
 
-## NO2
+noralized_air_quality_data = normalizeDF(air_quality_data[ ,3:length(air_quality_data)])
 
-hist_imputed = hist(Imputed_NO2, col="blue2", 
-                    main = paste("NO2.GT. & imputed NO2.GT. histogram"), xlab="NO2")
-hist = hist(NO2.GT., col="darkgreen", add=TRUE)
+m<-apply(noralized_air_quality_data,2,mean)
+S<-cov(noralized_air_quality_data)
+d3<-mahalanobis(noralized_air_quality_data,m,S)
+plot(seq(1:dim(noralized_air_quality_data)[1]),d3)
+abline(h=qchisq(0.95,13),col="red")
+dev.copy(pdf, paste("mahalanobis.pdf"), width=20, height=11) 
+dev.off()
 
-x_values_imputed <- seq(min(Imputed_NO2), max(Imputed_NO2), length = 100)
-y_values_imputed <- dnorm(x_values_imputed, mean = mean(Imputed_NO2), sd = sd(Imputed_NO2)) 
-y_values_imputed <- y_values_imputed * diff(hist_imputed$mids[1:2]) * length(Imputed_NO2) 
+## 
 
-lines(x_values_imputed, y_values_imputed, lwd = 3, col="green")
+new_air_quality_data = air_quality_data[ ,3:length(air_quality_data)]
 
-x_values <- seq(min(na.omit(NO2.GT.)), max(na.omit(NO2.GT.)), length = 100)
-y_values <- dnorm(x_values, mean = mean(na.omit(NO2.GT.)), sd = sd(na.omit(NO2.GT.))) 
-y_values <- y_values * diff(hist$mids[1:2]) * length(NO2.GT.) 
+m<-apply(new_air_quality_data,2,mean)
+S<-cov(new_air_quality_data)
+d3<-mahalanobis(new_air_quality_data,m,S)
+plot(seq(1:dim(new_air_quality_data)[1]),d3)
+abline(h=qchisq(0.95,13),col="red")
 
-lines(x_values, y_values, lwd = 3, col="blue")
+identify(d3)   
 
-# Histograms + Poisson 
+detach(air_quality_data)
 
-## CO
+# Date -> uniform
+# Time -> uniform
+# CO.GT. -> poisson
+# PT08.S1.CO. -> log normal
+# NMHC.GT.-> log normal
+# C6H6.GT. -> log normal
+# PT08.S2.NMHC.-> log normal
+# NOx.GT. -> log normal 
+# PT08.S3.NOx. -> log normal
+# NO2.GT. -> normal
+# PT08.S4.NO2. -> log normal
+# PT08.S5.O3. -> log normal
+# T -> log normal
+# RH -> ?
+# AH -> ?
 
-hist(CO.GT., freq=FALSE, breaks=100)
-lines(density(na.omit(CO.GT.), bw=0.8), col="red")
-(my.mle<-fitdistr(na.omit(CO.GT.), densfun="poisson"))
-##      lambda  
-##   20.6700000 
-##  ( 0.4546427)
-BIC(my.mle)
-
-# 
-# hist(Imputed_NMHC, col="blue2", 
-#      main = paste("NMHC.GT. & imputed NMHC.GT. histogram"), xlab="NMHC")
-# hist(NMHC.GT., col="darkgreen", add=TRUE)
-# 
-# hist(Imputed_NOx, col="blue2", 
-#      main = paste("NOx.GT. & imputed NOx.GT. histogram"), xlab="NOx")
-# hist(NOx.GT., col="darkgreen", add=TRUE)
-# 
-# hist(Imputed_NO2, col="blue2", 
-#      main = paste("NO2.GT. & imputed NO2.GT. histogram"), xlab="NO2")
-# hist(NO2.GT., col="darkgreen", add=TRUE)
