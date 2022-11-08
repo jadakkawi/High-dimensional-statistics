@@ -6,6 +6,7 @@
 # Authors :
 #     - Merle Corentin 
 #     - Jad Akkawi
+
 library(visdat)
 library(corrplot)
 
@@ -107,10 +108,10 @@ hist(Imputed_NO2, col="blue2",
      main = paste("NO2.GT. & imputed NO2.GT. histogram"), xlab="NO2")
 hist(NO2.GT., col="darkgreen", add=TRUE)
 
-#air_quality_data$CO.GT. = Imputed_CO
-#air_quality_data$NMHC.GT. = Imputed_NMHC
-#air_quality_data$NOx.GT. = Imputed_NOx
-#air_quality_data$NO2.GT. = Imputed_NO2
+ggplot(air_quality_data,aes(x=NMHC.GT.,y=Time)) + geom_miss_point()
+ggplot(air_quality_data,aes(x=NO2.GT. ,y=Time)) + geom_miss_point()
+ggplot(air_quality_data,aes(x=NOx.GT. ,y=Time)) + geom_miss_point()
+ggplot(air_quality_data,aes(x=CO.GT.  ,y=Time)) + geom_miss_point()
 
 attach(air_quality_data)
 
@@ -124,21 +125,4 @@ write.table(cbind(Date, Time, CO.GT.=Imputed_CO, PT08.S1.CO., NMHC.GT.=Imputed_N
             col.names = TRUE)
 
 detach(air_quality_data)
-
-
-library(Hmisc) 
-# create your table
-tab <- table(summary(air_quality_data))
-
-# reassemble to put things where they need to be
-tab2 <- cbind(rownames(tab), tab)
-tab3 <- rbind(c("","\\multicolumn{4}{l}{state.region}", rep("",ncol(tab2)-2)),
-              c("state.division",colnames(tab2)[-1]), 
-              tab2)
-
-# print as xtable
-library("xtable")
-print(xtable(tab3), include.rownames = FALSE, include.colnames = FALSE, sanitize.text.function = I, hline.after = c(0,1,2,11))
-
-
 

@@ -5,6 +5,8 @@ library(corrplot)
 air_quality_data <- read.table('cleanAirQuality.csv', sep=";" , 
                                header=TRUE, stringsAsFactors=TRUE)
 
+summary(air_quality_data)
+
 air_quality_data<-subset (air_quality_data, select = -AH_bin)
 summary(air_quality_data)
 dim(air_quality_data)
