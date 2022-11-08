@@ -9,7 +9,7 @@
 library(visdat)
 library(corrplot)
 
-air_quality_data <- read.table('preProcessAirQuality.csv', sep=";" , 
+air_quality_data = read.table('preProcessAirQuality.csv', sep=";" , 
                                header=TRUE, stringsAsFactors=TRUE)
 attach(air_quality_data)
 
@@ -44,7 +44,7 @@ air_quality_data[which(is.na(CO.GT.)),]
 ## we realize that during the month of march at 4:00 AM the reference center 
 ## did not  measure any data regarding CO maybe because the machines were resetting
 
-# Compare missingness correlation
+# Compare correlation
 
 cor1<-cor(cbind(CO.GT.,PT08.S1.CO.,NMHC.GT.,C6H6.GT.,PT08.S2.NMHC., NOx.GT., PT08.S3.NOx., NO2.GT., PT08.S4.NO2., PT08.S5.O3., RH, AH, AH_bin, T),use="complete.obs")
 cor2<-cor(cbind(CO.GT.,PT08.S1.CO.,NMHC.GT.,C6H6.GT.,PT08.S2.NMHC., NOx.GT., PT08.S3.NOx., NO2.GT., PT08.S4.NO2., PT08.S5.O3., RH, AH, AH_bin, T),use="pairwise.complete.obs")
@@ -130,4 +130,21 @@ write.table(cbind(Date, Time, CO.GT.=Imputed_CO, PT08.S1.CO., NMHC.GT.=Imputed_N
             col.names = TRUE)
 
 detach(air_quality_data)
+
+
+library(Hmisc) 
+# create your table
+tab <- table(summary(air_quality_data))
+
+# reassemble to put things where they need to be
+tab2 <- cbind(rownames(tab), tab)
+tab3 <- rbind(c("","\\multicolumn{4}{l}{state.region}", rep("",ncol(tab2)-2)),
+              c("state.division",colnames(tab2)[-1]), 
+              tab2)
+
+# print as xtable
+library("xtable")
+print(xtable(tab3), include.rownames = FALSE, include.colnames = FALSE, sanitize.text.function = I, hline.after = c(0,1,2,11))
+
+
 
