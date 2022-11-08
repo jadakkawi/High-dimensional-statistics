@@ -218,6 +218,25 @@ abline(h=qchisq(0.95,13),col="red")
 
 identify(d3)   
 
+
+
+
+
+plot(Time, CO.GT., xlab= "time", ylab="CO.GT.")
+plot(Time, PT08.S1.CO., xlab= "time", ylab="PT08.S1.CO.")
+plot(Time, NMHC.GT., xlab= "time", ylab="NMHC.GT.")
+plot(Time, C6H6.GT., xlab= "time", ylab="C6H6.GT.")
+plot(Time, PT08.S2.NMHC., xlab= "time", ylab="PT08.S2.NMHC.")
+plot(Time, NOx.GT., xlab= "time", ylab="NOx.GT.")
+plot(Time, PT08.S3.NOx., xlab= "time", ylab="PT08.S3.NOx.")
+plot(Time, NO2.GT., xlab= "time", ylab="NO2.GT.")
+plot(Time, PT08.S4.NO2., xlab= "time", ylab="PT08.S4.NO2.")
+plot(Time, PT08.S5.O3., xlab= "time", ylab="PT08.S5.O3.")
+plot(Time, T, xlab= "time", ylab="T")
+plot(Time, RH, xlab= "time", ylab="RH")
+
+pairs(air_quality_data)
+
 detach(air_quality_data)
 
 # Date -> uniform

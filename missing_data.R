@@ -17,7 +17,13 @@ vis_miss(air_quality_data)
 vis_dat(air_quality_data)
 gg_miss_upset(air_quality_data)
 
-ggplot(air_quality_data,aes(x=NMHC.GT.,y=C6H6.GT.)) + geom_miss_point() 
+ggplot(air_quality_data,aes(x=NMHC.GT.,y=C6H6.GT.)) + geom_miss_point()
+
+ggplot(air_quality_data,aes(x=NMHC.GT.,y=Time)) + geom_miss_point()
+ggplot(air_quality_data,aes(x=NO2.GT. ,y=Time)) + geom_miss_point()
+ggplot(air_quality_data,aes(x=NOx.GT. ,y=Time)) + geom_miss_point()
+ggplot(air_quality_data,aes(x=CO.GT.  ,y=Time)) + geom_miss_point()
+
 
 
 ## We can see from the plot that most missing values are "non metanic hydrocarbure" 103/133 cases 

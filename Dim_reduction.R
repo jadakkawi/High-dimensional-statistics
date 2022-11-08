@@ -4,8 +4,10 @@ library(corrplot)
 
 air_quality_data <- read.table('cleanAirQuality.csv', sep=";" , 
                                header=TRUE, stringsAsFactors=TRUE)
-
 air_quality_data<-subset (air_quality_data, select = -AH_bin)
+air_quality_data<-subset (air_quality_data, select = -Date)
+air_quality_data<-subset (air_quality_data, select = -Time)
+pairs(air_quality_data)
 summary(air_quality_data)
 dim(air_quality_data)
 vis_miss(air_quality_data)
@@ -54,6 +56,6 @@ s.corcircle(rescor)
 
 
 
-
+plot(C6H6.GT., PT08.S2.NMHC., xlab= "C6H6.GT.", ylab="PT08.S2.NMHC.")
 
 
