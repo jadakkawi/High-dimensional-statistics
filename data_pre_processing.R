@@ -42,7 +42,7 @@ summary(air_quality_data)
 # Good! 
 
 # Generate the binary attribute from the quantitative attribute AH
-threshold = 0.95
+threshold = 0.8
 air_quality_data$AH_bin[air_quality_data$AH < threshold] = 0
 air_quality_data$AH_bin[air_quality_data$AH >= threshold] = 1
 

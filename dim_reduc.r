@@ -68,7 +68,7 @@ plot(resPCA$values,type="b")
 # dev.copy(pdf, paste("Plots/plot(resPCA$values).pdf", sep=""), 
 #          width=20, height=11) 
 # dev.off()
-air_quality_data = air_quality_data which(date in 7 to 12 and 17 to 21)
+################ air_quality_data = air_quality_data which(date in 7 to 12 and 17 to 21)
 y<-as.matrix(air_quality_data) %*% resPCA$vectors
 plot(y[,1],y[,2], col=as.matrix(AH_bin)+3, pch = 18)
 legend("topleft", legend = c("Low Humidity ", "High Humidity"), col = 3:4, pch = 18, bty = "n")
