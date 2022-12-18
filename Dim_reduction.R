@@ -4,12 +4,7 @@ library(corrplot)
 
 air_quality_data <- read.table('cleanAirQuality.csv', sep=";" , 
                                header=TRUE, stringsAsFactors=TRUE)
-<<<<<<< HEAD
-=======
 
-summary(air_quality_data)
-
->>>>>>> 0567595e3a5abcd59ef71b7a5731e6e62f3bf519
 air_quality_data<-subset (air_quality_data, select = -AH_bin)
 air_quality_data<-subset (air_quality_data, select = -Date)
 air_quality_data<-subset (air_quality_data, select = -Time)
