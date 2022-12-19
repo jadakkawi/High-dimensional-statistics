@@ -31,7 +31,7 @@ standardizeDF <- function(x) {
 
 air_quality_data = read.csv('Data/cleanAirQuality.csv', sep=";", 
                             header=TRUE, stringsAsFactors=TRUE)
-air_quality_data$NOx.GT.<- air_quality_data$NOx.GT.>=130
+air_quality_data$NOx.GT.<- air_quality_data$NOx.GT.>=100
 
 NOx.GT._factor <- as.factor(air_quality_data[['NOx.GT.']])
 
@@ -70,10 +70,9 @@ Classif1 <- GLM1$fitted.values >= 0.5
 (tab1 <- table(train[['NOx.GT._factor']], Classif1))
 round((tab1[2,1]+tab1[1,2])/sum(tab1) * 100, 2)
 library(MASS)
-stepAIC(GLM1, direction="backward")
+jad <-stepAIC(GLM1, direction="backward")
 
-glm2 <- glm(NOx.GT._factor ~ CO.GT. +PT08.S1.CO.+NMHC.GT.
-            +NO2.GT.+PT08.S4.NO2.+PT08.S5.O3., data = train,family=binomial(link="logit"))
+glm2 <- glm(NOx.GT._factor ~ NMHC.GT. + NO2.GT. + PT08.S4.NO2. + T + RH, data = train,family=binomial(link="logit"))
 # glm2 <- glm(AH_bin_factor ~ PT08.S1.CO. + NMHC.GT. +PT08.S2.NMHC.+NOx.GT.
 #             +PT08.S3.NOx.+PT08.S4.NO2.+T+RH, data = train,family=binomial(link="logit"))
 summary(glm2)
@@ -88,8 +87,8 @@ pairs(air_quality_data)
 fitProb <- linearPredict <- NULL
 for(i in 1:dim(test)[1])
 {
-  ind_i <- c(1, test$CO.GT.[i], test$PT08.S1.CO.[i],test$NMHC.GT.[i],
-             test$NO2.GT.[i], test$PT08.S4.NO2.[i], test$PT08.S5.O3.[i])
+  ind_i <- c(1, test$NMHC.GT.[i], test$NO2.GT.[i], 
+             test$PT08.S4.NO2.[i], test$T[i], test$RH[i])
   # ind_i <- c(1, test$PT08.S1.CO.[i], test$NMHC.GT.[i], test$PT08.S2.NMHC.[i],
   #            test$NOx.GT.[i], test$PT08.S3.NOx.[i], test$PT08.S4.NO2.[i], 
   #            test$T[i], test$RH[i])
@@ -102,24 +101,30 @@ round((tabos[2,1]+tabos[1,2])/sum(tabos) * 100, 2)
 
 library(car)
 vif(glm2)
+pairs(data.frame(train$NMHC.GT.,train$NO2.GT.,train$PT08.S4.NO2
+                 ,train$T,train$RH))
 
+
+# Discriminatory Boxplots
+
+boxplot(train$NMHC.GT. ~ train$NOx.GT._factor)
+boxplot(train$NO2.GT. ~ train$NOx.GT._factor)
+boxplot(train$PT08.S4.NO2 ~ train$NOx.GT._factor)
+boxplot(train$T ~ train$NOx.GT._factor)
+boxplot(train$RH ~ train$NOx.GT._factor)
 # 2. Further analysis (PCA) ----
-
-dataPCA <- train[,-c(1, 2, 3, 12)]
-# dataPCA <- train[,-c(1, 4, 8, 10, 13)]
-
+dataPCA <- train[,-c(1, 2, 4, 5, 8, 11)]
 res <- princomp(dataPCA, cor=TRUE)
 summary(res)
 plot(res,type="b")
-
-mod2 <- glm(train$AH_bin_factor ~ res$scores[,1] + res$scores[,2] + res$scores[,3] +
-              res$scores[,4] + res$scores[,5],family=binomial(logit))
+mod2 <- glm(train$NOx.GT._factor ~ res$scores[,1] + res$scores[,2] + res$scores[,3] +
+              res$scores[,4] ,family=binomial(logit))
 summary(mod2)
 #In order to simplify the model, different procedures are possible
 #As illustration, two-way the automatic selection procedure  based on the AIC is used:
 modPCA <- stepAIC(mod2, direction="both")
 
-# And the 1st,2nd, 3rd, 4th and 5th PCs are kept in the final model.
+# And the 1st,2nd, 3rd, 4th PCs are kept in the final model.
 
 #plot(obesity, modPCA$fitted, ylim=c(0,1), ylab="Fitted values")
 #plot(sbp, modPCA$fitted, ylim=c(0,1), ylab="Fitted values")
@@ -127,22 +132,23 @@ modPCA <- stepAIC(mod2, direction="both")
 #These plots show no clear patterns; this means that the probability of success
 # does not increase/decrease with these two variables
 
-mod3 <- glm(train$AH_bin_factor ~ res$scores[,1] +
-              res$scores[,4] + res$scores[,5],family=binomial(logit))
+mod3 <- glm(train$NOx.GT._factor ~ res$scores[,1] +
+            res$scores[,2] + res$scores[,3] + res$scores[,4],family=binomial(logit))
 summary(mod3)
 
-plot(mod3$linear.predictors, mod3$fitted, col = as.numeric(train[['AH_bin_factor']]))
+plot(mod3$linear.predictors, mod3$fitted, col = as.numeric(train[['NOx.GT._factor']]))
 
 fitProb2 <- linearPredict2 <- NULL
 for(i in 1:dim(test)[1]){ 
   # transform test into PCA
-  ind_i <- c(test$C6H6.GT.[i], test$PT08.S2.NMHC.[i],
-             test$NOx.GT.[i], test$PT08.S3.NOx.[i],test$NO2.GT.[i], test$PT08.S4.NO2.[i],test$PT08.S5.O3.[i],
-             test$T[i])
-  tranformed_i = append(1,ind_i %*% res$loadings[,c(1,4,5)])
+  ind_i <- c(test$NMHC.GT.[i], test$NO2.GT.[i],
+              test$PT08.S4.NO2.[i],
+             test$T[i], test$RH[i])
+  tranformed_i = append(1,ind_i %*% res$loadings[,c(1,2,3,4)])
   linearPredict2[i] <- tranformed_i %*% mod3$coefficients
   fitProb2[i] <- exp(linearPredict2[i]) / (1+exp(linearPredict2[i]))
 }
 Classico <- fitProb2 >= 0.5
-(tabos <- table(test$AH_bin_factor, Classico))
+(tabos <- table(test$NOx.GT._factor, Classico))
 round((tabos[2,1]+tabos[1,2])/sum(tabos) * 100, 2)
+
