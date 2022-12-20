@@ -85,7 +85,7 @@ summary(air_quality_data)
 # We first try the logistic regression framework.
 # We split the data into 80/20 ratio.
 
-# AH_bin = as.factor(AH_bin)
+
 set.seed(2)
 sample <- sample(c(TRUE, FALSE), dim(air_quality_data)[1], replace=TRUE, prob=c(0.8,0.2))
 train  <- air_quality_data[sample, ]
@@ -107,8 +107,7 @@ library(MASS)
 jad <-stepAIC(GLM1, direction="backward")
 
 glm2 <- glm(NOx.GT._factor ~ NMHC.GT. + NO2.GT. + PT08.S4.NO2. + T + RH, data = train,family=binomial(link="logit"))
-# glm2 <- glm(AH_bin_factor ~ PT08.S1.CO. + NMHC.GT. +PT08.S2.NMHC.+NOx.GT.
-#             +PT08.S3.NOx.+PT08.S4.NO2.+T+RH, data = train,family=binomial(link="logit"))
+
 summary(glm2)
 
 Classif2 <- glm2$fitted.values >= 0.5
