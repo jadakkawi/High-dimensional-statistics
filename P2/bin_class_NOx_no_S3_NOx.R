@@ -31,7 +31,7 @@ Spec <- function(M)
 
 ROCCurve <- function(score, class)
 {
-  x <- y <- NULL
+  x <- y <- z <- NULL
   scoreOrd <- sort(score)
   
   x[1] <- 1 ; y[1] <- 1
@@ -43,8 +43,9 @@ ROCCurve <- function(score, class)
     spec <- Spec(ConfMat)
     x[i] <- 1-spec
     y[i] <- sens
+    z[i] <- scoreOrd[i]
   }
-  return(list(x=x, y=y))
+  return(list(x=x, y=y, z=z))
 }
 # Standardize dataframe function
 
@@ -321,13 +322,19 @@ sens.5_LDA <- Sens(ConfMat_LDA) ; spec.5_LDA <- Spec(ConfMat_LDA)
 
 (id_LogRegr <- which.min(abs((1-ROC_LogRegr$x) - ROC_LogRegr$y)))
 sens_LogRegr <- ROC_LogRegr$y[id_LogRegr] ; spec_LogRegr <- 1-ROC_LogRegr$x[id_LogRegr]
+threshold_logreg <-  ROC_LogRegr$z[id_LogRegr] 
+
 (id_LDA <- which.min(abs((1-ROC_lda$x) - ROC_lda$y)))
 sens_LDA <- ROC_lda$y[id_LDA] ; spec_LDA <- 1-ROC_lda$x[id_LDA]
+threshold_lda <-  ROC_lda$z[id_LDA] 
 
 (idYouden_LogRegr <- which.max(ROC_LogRegr$y - ROC_LogRegr$x))
 sens.Youd_LogRegr <- ROC_LogRegr$y[idYouden_LogRegr] ; spec.Youd_LogRegr <- 1-ROC_LogRegr$x[idYouden_LogRegr]
+threshold_logreg_youden <-  ROC_LogRegr$z[idYouden_LogRegr] 
+
 (idYouden_LDA <- which.max(ROC_lda$y - ROC_lda$x))
 sens.Youd_LDA <- ROC_lda$y[idYouden_LDA] ; spec.Youd_LDA <- 1-ROC_lda$x[idYouden_LDA]
+threshold_lda_youden <-  ROC_lda$z[idYouden_LDA]
 
 points(c(1-spec.5_LogRegr, 1-spec_LogRegr, 1-spec.Youd_LogRegr),
        c(sens.5_LogRegr, sens_LogRegr, sens.Youd_LogRegr), pch=16, col=2:4)
