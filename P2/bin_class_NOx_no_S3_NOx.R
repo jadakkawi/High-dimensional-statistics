@@ -12,7 +12,40 @@
 # One might also Predict absence or presence of a certain chemical compound in the air due to sensor responses
 rm(list=ls())
 ################################################################################
+# Sensitivity:
+Sens <- function(M)
+{
+  M[2,2]/sum(M[2,])
+}
+# Rem.: It is assumed that the truth is on the rows and the classification in the columns
 
+# Specificity:
+Spec <- function(M)
+{
+  M[1,1]/sum(M[1,])
+}
+# Rem.: It is assumed that the truth is on the rows and the classification in the columns
+
+
+# 2. ROC curve  ----
+
+ROCCurve <- function(score, class)
+{
+  x <- y <- NULL
+  scoreOrd <- sort(score)
+  
+  x[1] <- 1 ; y[1] <- 1
+  for(i in 2:length(score)){
+    c <- scoreOrd[i]
+    ConfMat <- table(class, score >= c)
+    
+    sens <- Sens(ConfMat)
+    spec <- Spec(ConfMat)
+    x[i] <- 1-spec
+    y[i] <- sens
+  }
+  return(list(x=x, y=y))
+}
 # Standardize dataframe function
 
 standardizeDF <- function(x) {
@@ -151,4 +184,143 @@ for(i in 1:dim(test)[1]){
 Classico <- fitProb2 >= 0.5
 (tabos <- table(test$NOx.GT._factor, Classico))
 round((tabos[2,1]+tabos[1,2])/sum(tabos) * 100, 2)
+
+# Faire un CV GLM fit puis appliquer ROC CURVE
+
+# Fitted probabilities via leave-one-out:
+cvfitProb <- cvlinearPredict <- NULL
+for(i in 1:dim(air_quality_data)[1]){
+  newdata <- air_quality_data[-i,]
+  modcv <- glm(NOx.GT._factor ~ NMHC.GT. + NO2.GT. + PT08.S4.NO2. + T + RH, data = newdata,family=binomial(link="logit"))
+  cvlinearPredict[i] <- predict(modcv, newdata=air_quality_data[i,])
+  cvfitProb[i] <- exp(cvlinearPredict[i]) / (1+exp(cvlinearPredict[i]))
+}
+plot(cvlinearPredict, cvfitProb, col=as.numeric(NOx.GT._factor)+1, xlab="Linear predictor", ylab="Fitted probability")
+
+# ROC curve:
+ROC_LogRegr <- ROCCurve(score=cvfitProb, class=as.numeric(NOx.GT._factor))
+plot(ROC_LogRegr$x, ROC_LogRegr$y, xlab="1-specificity", ylab="sensitivity",
+     xaxt="n",yaxt="n", xlim=0:1, ylim=0:1)
+axis(1, seq(0,1,by=0.2), seq(0,1,by=0.2))
+axis(2, seq(0,1,by=0.2), seq(0,1,by=0.2))
+abline(0,1, lty=2, col="grey")
+
+
+# 2. Linear discriminant analysis ----
+
+ldafull <- lda(x=data[,1:5], grouping=Diag)
+g <- 2 ; n <- dim(data)[1]
+l1 <- (g-1)*(ldafull$svd)^2 / (n-g)
+( gamma1 <- l1/(1+l1) )
+
+# Variable selection:
+l <- gamma <- NULL
+for(i in 1:5){
+  var <- (1:5)[-i]
+  ldaTest <- lda(x=data[,var], grouping=Diag)
+  l[i] <- (g-1)*(ldaTest$svd)^2 / (n-g)
+  gamma[i] <- l[i]/(1+l[i])
+}
+gamma
+# Age (and possibly BloodPres and Chol) could be removed
+l <- gamma <- NULL
+for(i in 1:4)
+{
+  var <- (2:5)[-i]
+  ldaTest <- lda(x=data[,var], grouping=Diag)
+  lTest <- (g-1)*(ldaTest$svd)^2 / (n-g)
+  l <- c(l, lTest)
+  gamma <- c(gamma, lTest/(1+lTest))
+}
+gamma
+# Chol could be removed
+l <- gamma <- NULL
+for(i in 1:3)
+{
+  var <- c(2,3,5)[-i]
+  ldaTest <- lda(x=data[,var], grouping=Diag)
+  lTest <- (g-1)*(ldaTest$svd)^2 / (n-g)
+  l <- c(l, lTest)
+  gamma <- c(gamma, lTest/(1+lTest))
+}
+gamma
+# After comparison of the powers of the different models, a final model is obtained by removing
+# the variables Age and Chol.
+
+# Posterior probabilities via leave-one-out:
+# They can be obtained by applying a loop of the same type as for logistic regression
+# or directly by using the option CV=TRUE of the lda function
+lda1 <- lda(x=data[,c(2,3,5)], grouping=Diag, CV=TRUE)
+postProb <- lda1$posterior[,2]
+
+# ROC curve:
+ROC_lda <- ROCCurve(score=postProb, class=Diag)
+plot(ROC_lda$x, ROC_lda$y, type="l", xlab="1-specificity", ylab="sensitivity",
+     xaxt="n",yaxt="n", xlim=0:1, ylim=0:1)
+axis(1, seq(0,1,by=0.2), seq(0,1,by=0.2))
+axis(2, seq(0,1,by=0.2), seq(0,1,by=0.2))
+abline(0,1, lty=2, col="grey")
+
+
+# 3. Comparison of the two classifications ----
+
+# Comparison of scores:
+plot(fitProb, postProb, xlab="Prob. log. regr.", ylab="Prob. LDA") ; abline(a=0,b=1, lty=2, col="red")
+plot(fitProb-postProb, ylab="Prob. log. regr. - Prob. LDA") ; abline(h=0, lty=2, col="red")
+( tabComp <- table(fitProb >= 0.5, postProb >= 0.5) )
+(tabComp[1,2]+tabComp[2,1]) / sum(tabComp)
+# Posterior probabilities are, for the most, quite closed and, using a cutoff
+# equal to 0.5, 23 observations (i.e. 7.6%) are differently classified by the
+# two techniques.
+
+# Comparison of ROC curves:
+plot(ROC_LogRegr$x, ROC_LogRegr$y, type="l", xlab="1-specificity", ylab="sensitivity",
+     xaxt="n",yaxt="n", xlim=0:1, ylim=0:1)
+axis(1, seq(0,1,by=0.2), seq(0,1,by=0.2))
+axis(2, seq(0,1,by=0.2), seq(0,1,by=0.2))
+abline(0,1, lty=2, col="grey")
+lines(ROC_lda$x, ROC_lda$y, type="l", col=2, lty=2)
+legend("bottomright",c("Logistic regression","LDA"), col=1:2, lty=1:2)
+# Both curves are quite close and the areas under the curves are also quite similar.
+
+# Specific cutoffs:
+( ConfMat_LogRegr <- table(Diag, fitProb >= 0.5) )
+( ConfMat_LDA <- table(Diag, postProb >= 0.5) )
+
+sens.5_LogRegr <- Sens(ConfMat_LogRegr) ; spec.5_LogRegr <- Spec(ConfMat_LogRegr)
+sens.5_LDA <- Sens(ConfMat_LDA) ; spec.5_LDA <- Spec(ConfMat_LDA)
+
+(id_LogRegr <- which.min(abs((1-ROC_LogRegr$x) - ROC_LogRegr$y)))
+sens_LogRegr <- ROC_LogRegr$y[id_LogRegr] ; spec_LogRegr <- 1-ROC_LogRegr$x[id_LogRegr]
+(id_LDA <- which.min(abs((1-ROC_lda$x) - ROC_lda$y)))
+sens_LDA <- ROC_lda$y[id_LDA] ; spec_LDA <- 1-ROC_lda$x[id_LDA]
+
+(idYouden_LogRegr <- which.max(ROC_LogRegr$y - ROC_LogRegr$x))
+sens.Youd_LogRegr <- ROC_LogRegr$y[idYouden_LogRegr] ; spec.Youd_LogRegr <- 1-ROC_LogRegr$x[idYouden_LogRegr]
+(idYouden_LDA <- which.max(ROC_lda$y - ROC_lda$x))
+sens.Youd_LDA <- ROC_lda$y[idYouden_LDA] ; spec.Youd_LDA <- 1-ROC_lda$x[idYouden_LDA]
+
+points(c(1-spec.5_LogRegr, 1-spec_LogRegr, 1-spec.Youd_LogRegr),
+       c(sens.5_LogRegr, sens_LogRegr, sens.Youd_LogRegr), pch=16, col=2:4)
+legend("bottomright",
+       legend=c("Cutoff = 0.5", "Cutoff achieving the same spec. and sens.", "Cutoff based on Youden's J statistics"),
+       col=2:4, pch=16)
+
+
+plot(ROC_LogRegr$x, ROC_LogRegr$y, type="l", xlab="1-specificity", ylab="sensitivity",
+     xaxt="n",yaxt="n", xlim=0:1, ylim=0:1)
+axis(1, seq(0,1,by=0.2), seq(0,1,by=0.2))
+axis(2, seq(0,1,by=0.2), seq(0,1,by=0.2))
+abline(0,1, lty=2, col="grey")
+points(c(1-spec.5_LogRegr, 1-spec_LogRegr, 1-spec.Youd_LogRegr),
+       c(sens.5_LogRegr, sens_LogRegr, sens.Youd_LogRegr), pch=16, col=c(3,4,6))
+lines(ROC_lda$x, ROC_lda$y, type="l", col=2, lty=2)
+points(c(1-spec.5_LDA, 1-spec_LDA, 1-spec.Youd_LDA),
+       c(sens.5_LDA, sens_LDA, sens.Youd_LDA), pch=17, col=c(3,4,6))
+legend("bottomright",
+       legend=c("Cutoffs = 0.5", "Cutoffs achieving the same spec. and sens.", "Cutoffs based on Youden's J statistics"),
+       col=c(3,4,6), pch=18)
+# The cutoff based on Youden's statistic seems to be the best in terms of specificity
+# while the cutoff achieving the same specificity and sensitivity seems to be the best in terms of
+# sensitivity. The "default" cutoff "equal to 0.5" seems to be a compromise between the two others.
 
