@@ -207,54 +207,79 @@ abline(0,1, lty=2, col="grey")
 
 
 # 2. Linear discriminant analysis ----
-
-ldafull <- lda(x=data[,1:5], grouping=Diag)
-g <- 2 ; n <- dim(data)[1]
+library(MASS)
+ldafull <- lda(x=air_quality_data[,1:10], grouping=air_quality_data$NOx.GT._factor)
+g <- 2 ; n <- dim(air_quality_data)[1]
 l1 <- (g-1)*(ldafull$svd)^2 / (n-g)
 ( gamma1 <- l1/(1+l1) )
 
 # Variable selection:
 l <- gamma <- NULL
-for(i in 1:5){
-  var <- (1:5)[-i]
-  ldaTest <- lda(x=data[,var], grouping=Diag)
+for(i in 1:10){
+  var <- (1:10)[-i]
+  ldaTest <- lda(x=air_quality_data[,var], grouping=air_quality_data$NOx.GT._factor)
   l[i] <- (g-1)*(ldaTest$svd)^2 / (n-g)
   gamma[i] <- l[i]/(1+l[i])
 }
 gamma
-# Age (and possibly BloodPres and Chol) could be removed
+# CO.GT. could be removed
 l <- gamma <- NULL
-for(i in 1:4)
+for(i in 1:9)
 {
-  var <- (2:5)[-i]
-  ldaTest <- lda(x=data[,var], grouping=Diag)
+  var <- (2:10)[-i]
+  ldaTest <- lda(x=air_quality_data[,var], grouping=air_quality_data$NOx.GT._factor)
   lTest <- (g-1)*(ldaTest$svd)^2 / (n-g)
   l <- c(l, lTest)
   gamma <- c(gamma, lTest/(1+lTest))
 }
 gamma
-# Chol could be removed
+# T could be removed
 l <- gamma <- NULL
-for(i in 1:3)
+for(i in 1:8)
 {
-  var <- c(2,3,5)[-i]
-  ldaTest <- lda(x=data[,var], grouping=Diag)
+  var <- c(2,3,4,5,6,7,8,10)[-i]
+  ldaTest <- lda(x=air_quality_data[,var], grouping=air_quality_data$NOx.GT._factor)
   lTest <- (g-1)*(ldaTest$svd)^2 / (n-g)
   l <- c(l, lTest)
   gamma <- c(gamma, lTest/(1+lTest))
 }
 gamma
+# PT08.S4.NO2. could be removed
+l <- gamma <- NULL
+for(i in 1:7)
+{
+  var <- c(2,3,4,5,6,8,10)[-i]
+  ldaTest <- lda(x=air_quality_data[,var], grouping=air_quality_data$NOx.GT._factor)
+  lTest <- (g-1)*(ldaTest$svd)^2 / (n-g)
+  l <- c(l, lTest)
+  gamma <- c(gamma, lTest/(1+lTest))
+}
+gamma
+# NMHC.GT.  could be removed
+l <- gamma <- NULL
+for(i in 1:6)
+{
+  var <- c(2,4,5,6,8,10)[-i]
+  ldaTest <- lda(x=air_quality_data[,var], grouping=air_quality_data$NOx.GT._factor)
+  lTest <- (g-1)*(ldaTest$svd)^2 / (n-g)
+  l <- c(l, lTest)
+  gamma <- c(gamma, lTest/(1+lTest))
+}
+gamma
+
+
 # After comparison of the powers of the different models, a final model is obtained by removing
-# the variables Age and Chol.
+# the variables CO.GT., T, PT08.S4.NO2., NMHC.GT.
 
 # Posterior probabilities via leave-one-out:
 # They can be obtained by applying a loop of the same type as for logistic regression
 # or directly by using the option CV=TRUE of the lda function
-lda1 <- lda(x=data[,c(2,3,5)], grouping=Diag, CV=TRUE)
+final = c(2,4,5,6,8,10)
+lda1 <- lda(x=air_quality_data[,final], grouping=air_quality_data$NOx.GT._factor, CV=TRUE)
 postProb <- lda1$posterior[,2]
 
 # ROC curve:
-ROC_lda <- ROCCurve(score=postProb, class=Diag)
+ROC_lda <- ROCCurve(score=postProb, class=air_quality_data$NOx.GT._factor)
 plot(ROC_lda$x, ROC_lda$y, type="l", xlab="1-specificity", ylab="sensitivity",
      xaxt="n",yaxt="n", xlim=0:1, ylim=0:1)
 axis(1, seq(0,1,by=0.2), seq(0,1,by=0.2))
@@ -265,10 +290,10 @@ abline(0,1, lty=2, col="grey")
 # 3. Comparison of the two classifications ----
 
 # Comparison of scores:
-plot(fitProb, postProb, xlab="Prob. log. regr.", ylab="Prob. LDA") ; abline(a=0,b=1, lty=2, col="red")
-plot(fitProb-postProb, ylab="Prob. log. regr. - Prob. LDA") ; abline(h=0, lty=2, col="red")
-( tabComp <- table(fitProb >= 0.5, postProb >= 0.5) )
-(tabComp[1,2]+tabComp[2,1]) / sum(tabComp)
+plot(cvfitProb, postProb, xlab="Prob. log. regr.", ylab="Prob. LDA") ; abline(a=0,b=1, lty=2, col="red")
+plot(cvfitProb-postProb, ylab="Prob. log. regr. - Prob. LDA") ; abline(h=0, lty=2, col="red")
+( tabComp <- table(cvfitProb >= 0.5, postProb >= 0.5) )
+((tabComp[1,2]+tabComp[2,1]) / sum(tabComp)*100)
 # Posterior probabilities are, for the most, quite closed and, using a cutoff
 # equal to 0.5, 23 observations (i.e. 7.6%) are differently classified by the
 # two techniques.
@@ -283,9 +308,13 @@ lines(ROC_lda$x, ROC_lda$y, type="l", col=2, lty=2)
 legend("bottomright",c("Logistic regression","LDA"), col=1:2, lty=1:2)
 # Both curves are quite close and the areas under the curves are also quite similar.
 
+
+
+
+
 # Specific cutoffs:
-( ConfMat_LogRegr <- table(Diag, fitProb >= 0.5) )
-( ConfMat_LDA <- table(Diag, postProb >= 0.5) )
+( ConfMat_LogRegr <- table(air_quality_data$NOx.GT._factor, cvfitProb >= 0.5) )
+( ConfMat_LDA <- table(air_quality_data$NOx.GT._factor, postProb >= 0.5) )
 
 sens.5_LogRegr <- Sens(ConfMat_LogRegr) ; spec.5_LogRegr <- Spec(ConfMat_LogRegr)
 sens.5_LDA <- Sens(ConfMat_LDA) ; spec.5_LDA <- Spec(ConfMat_LDA)
@@ -312,11 +341,13 @@ plot(ROC_LogRegr$x, ROC_LogRegr$y, type="l", xlab="1-specificity", ylab="sensiti
 axis(1, seq(0,1,by=0.2), seq(0,1,by=0.2))
 axis(2, seq(0,1,by=0.2), seq(0,1,by=0.2))
 abline(0,1, lty=2, col="grey")
+
 points(c(1-spec.5_LogRegr, 1-spec_LogRegr, 1-spec.Youd_LogRegr),
        c(sens.5_LogRegr, sens_LogRegr, sens.Youd_LogRegr), pch=16, col=c(3,4,6))
 lines(ROC_lda$x, ROC_lda$y, type="l", col=2, lty=2)
 points(c(1-spec.5_LDA, 1-spec_LDA, 1-spec.Youd_LDA),
        c(sens.5_LDA, sens_LDA, sens.Youd_LDA), pch=17, col=c(3,4,6))
+
 legend("bottomright",
        legend=c("Cutoffs = 0.5", "Cutoffs achieving the same spec. and sens.", "Cutoffs based on Youden's J statistics"),
        col=c(3,4,6), pch=18)
@@ -324,3 +355,4 @@ legend("bottomright",
 # while the cutoff achieving the same specificity and sensitivity seems to be the best in terms of
 # sensitivity. The "default" cutoff "equal to 0.5" seems to be a compromise between the two others.
 
+# 
