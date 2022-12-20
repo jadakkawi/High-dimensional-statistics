@@ -93,8 +93,8 @@ test   <- air_quality_data[!sample, ]
 
 GLM1 <- glm(formula = NOx.GT._factor ~ .,data = train, family=binomial(logit))
 summary(GLM1)
-ppv=1-pchisq(542.192-126.95, df=391-381)
-ppv
+# ppv=1-pchisq(542.192-126.95, df=391-381)
+# ppv
 
 glm0 <- glm(NOx.GT._factor ~ 1, data = train,family=binomial(link="logit"))
 anova(glm0, GLM1, test="Chisq")
