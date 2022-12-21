@@ -128,9 +128,11 @@ for(i in 1:dim(test)[1])
   linearPredict[i] <- ind_i %*% glm2$coefficients
   fitProb[i] <- exp(linearPredict[i]) / (1+exp(linearPredict[i]))
 }
-Classico <- fitProb >= 0.5
+Classico <- fitProb >= 0.58
 (tabos <- table(test$NOx.GT._factor, Classico))
 round((tabos[2,1]+tabos[1,2])/sum(tabos) * 100, 2)
+(sens_log <- Sens(tabos))
+(spec_log <- Spec(tabos))
 
 library(car)
 vif(glm2)
@@ -189,17 +191,17 @@ round((tabos[2,1]+tabos[1,2])/sum(tabos) * 100, 2)
 
 # Fitted probabilities via leave-one-out:
 cvfitProb <- cvlinearPredict <- NULL
-for(i in 1:dim(air_quality_data)[1]){
-  newdata <- air_quality_data[-i,]
+for(i in 1:dim(train)[1]){
+  newdata <- train[-i,]
   modcv <- glm(NOx.GT._factor ~ NMHC.GT. + NO2.GT. + PT08.S4.NO2. + T + RH, data = newdata,family=binomial(link="logit"))
-  cvlinearPredict[i] <- predict(modcv, newdata=air_quality_data[i,])
+  cvlinearPredict[i] <- predict(modcv, newdata=train[i,])
   cvfitProb[i] <- exp(cvlinearPredict[i]) / (1+exp(cvlinearPredict[i]))
 }
 plot(cvlinearPredict, cvfitProb, col=as.numeric(NOx.GT._factor)+1, xlab="Linear predictor", ylab="Fitted probability")
 
 # ROC curve:
-ROC_LogRegr <- ROCCurve(score=cvfitProb, class=as.numeric(NOx.GT._factor))
-plot(ROC_LogRegr$x, ROC_LogRegr$y, xlab="1-specificity", ylab="sensitivity",
+ROC_LogRegr <- ROCCurve(score=cvfitProb, class=as.numeric(train[["NOx.GT._factor"]]))
+plot(ROC_LogRegr$x, ROC_LogRegr$y,type="l", xlab="1-specificity", ylab="sensitivity",
      xaxt="n",yaxt="n", xlim=0:1, ylim=0:1)
 axis(1, seq(0,1,by=0.2), seq(0,1,by=0.2))
 axis(2, seq(0,1,by=0.2), seq(0,1,by=0.2))
@@ -208,59 +210,56 @@ abline(0,1, lty=2, col="grey")
 
 # 2. Linear discriminant analysis ----
 library(MASS)
-ldafull <- lda(x=air_quality_data[,1:10], grouping=air_quality_data$NOx.GT._factor)
-g <- 2 ; n <- dim(air_quality_data)[1]
+ldafull <- lda(x=train[,1:10], grouping=train$NOx.GT._factor)
+g <- 2 ; n <- dim(train)[1]
 l1 <- (g-1)*(ldafull$svd)^2 / (n-g)
 ( gamma1 <- l1/(1+l1) )
+
+projection <- predict(object = ldafull,
+                              newdata = train[,1:10])
+plot(projection$x,numeric(length=dim(train)[1]),col = (4-as.numeric(train[['NOx.GT._factor']])), ylim=c(-0.1,0.1),pch = 3)
+legend("bottomright",
+       legend=c("Low NOx", "High NOx"),
+       col=c("green","red"), pch =3)
 
 # Variable selection:
 l <- gamma <- NULL
 for(i in 1:10){
   var <- (1:10)[-i]
-  ldaTest <- lda(x=air_quality_data[,var], grouping=air_quality_data$NOx.GT._factor)
+  ldaTest <- lda(x=train[,var], grouping=train$NOx.GT._factor)
   l[i] <- (g-1)*(ldaTest$svd)^2 / (n-g)
   gamma[i] <- l[i]/(1+l[i])
 }
 gamma
-# CO.GT. could be removed
-l <- gamma <- NULL
-for(i in 1:9)
-{
-  var <- (2:10)[-i]
-  ldaTest <- lda(x=air_quality_data[,var], grouping=air_quality_data$NOx.GT._factor)
-  lTest <- (g-1)*(ldaTest$svd)^2 / (n-g)
-  l <- c(l, lTest)
-  gamma <- c(gamma, lTest/(1+lTest))
-}
-gamma
-# T could be removed
-l <- gamma <- NULL
-for(i in 1:8)
-{
-  var <- c(2,3,4,5,6,7,8,10)[-i]
-  ldaTest <- lda(x=air_quality_data[,var], grouping=air_quality_data$NOx.GT._factor)
-  lTest <- (g-1)*(ldaTest$svd)^2 / (n-g)
-  l <- c(l, lTest)
-  gamma <- c(gamma, lTest/(1+lTest))
-}
-gamma
-# PT08.S4.NO2. could be removed
+# CO.GT., T and RH could be removed
 l <- gamma <- NULL
 for(i in 1:7)
 {
-  var <- c(2,3,4,5,6,8,10)[-i]
-  ldaTest <- lda(x=air_quality_data[,var], grouping=air_quality_data$NOx.GT._factor)
+  var <- (c(2,3,4,5,6,7,8))[-i]
+  ldaTest <- lda(x=train[,var], grouping=train$NOx.GT._factor)
   lTest <- (g-1)*(ldaTest$svd)^2 / (n-g)
   l <- c(l, lTest)
   gamma <- c(gamma, lTest/(1+lTest))
 }
 gamma
-# NMHC.GT.  could be removed
+# NMHC.GT. and  PT08.S4.NO2. could be removed
 l <- gamma <- NULL
-for(i in 1:6)
+for(i in 1:5)
 {
-  var <- c(2,4,5,6,8,10)[-i]
-  ldaTest <- lda(x=air_quality_data[,var], grouping=air_quality_data$NOx.GT._factor)
+  var <- c(2,4,5,6,8)[-i]
+  ldaTest <- lda(x=train[,var], grouping=train$NOx.GT._factor)
+  lTest <- (g-1)*(ldaTest$svd)^2 / (n-g)
+  l <- c(l, lTest)
+  gamma <- c(gamma, lTest/(1+lTest))
+}
+gamma
+colnames(train)[c(2,4,5,6,8)]
+# "C6H6.GT." and "PT08.S2.NMHC." could be stay
+l <- gamma <- NULL
+for(i in 1:2)
+{
+  var <- c(4,5)[-i]
+  ldaTest <- lda(x=as.matrix(train[,var]), grouping=train$NOx.GT._factor)
   lTest <- (g-1)*(ldaTest$svd)^2 / (n-g)
   l <- c(l, lTest)
   gamma <- c(gamma, lTest/(1+lTest))
@@ -268,18 +267,38 @@ for(i in 1:6)
 gamma
 
 
-# After comparison of the powers of the different models, a final model is obtained by removing
-# the variables CO.GT., T, PT08.S4.NO2., NMHC.GT.
+lda2 <- lda(x=train[, c(4,5)], grouping=train$NOx.GT._factor)
+g <- 2 ; n <- dim(train)[1]
+l1 <- (g-1)*(ldafull$svd)^2 / (n-g)
+( gamma1 <- l1/(1+l1) )
+
+
+plot(train[["C6H6.GT."]], train[["PT08.S2.NMHC."]], col = (4-as.numeric(train[['NOx.GT._factor']])))
+# plot(projection$x,numeric(length=dim(train)[1]),col = (4-as.numeric(train[['NOx.GT._factor']])), ylim=c(-0.1,0.1),pch = 3)
+legend("bottomright",
+       legend=c("Low NOx", "High NOx"),
+       col=c("green","red"), pch =3)
+xx = seq(from = -1.8, to= 4,  by= 0.025)
+yy = -xx*lda2$scaling[2,1]/lda2$scaling[1,1]
+lines(xx,yy)
 
 # Posterior probabilities via leave-one-out:
 # They can be obtained by applying a loop of the same type as for logistic regression
 # or directly by using the option CV=TRUE of the lda function
-final = c(2,4,5,6,8,10)
-lda1 <- lda(x=air_quality_data[,final], grouping=air_quality_data$NOx.GT._factor, CV=TRUE)
+
+final = c(4,5)
+lda1 <- lda(x=train[,final], grouping=train$NOx.GT._factor, CV=TRUE)
 postProb <- lda1$posterior[,2]
 
+lda2 <- lda(x=train[,final], grouping=train$NOx.GT._factor)
+testos <- predict(object = lda2, newdata=test[,c(4,5)])
+testprob = testos$posterior[,2]
+( ConfMat_LDA_test <- table(test$NOx.GT._factor, testprob >= 0.8) )
+((ConfMat_LDA_test[1,2]+ConfMat_LDA_test[2,1]) / sum(ConfMat_LDA_test)*100)
+(sens_test_Lda <- Sens(ConfMat_LDA_test))
+(spec_test_lda <-Spec(ConfMat_LDA_test))
 # ROC curve:
-ROC_lda <- ROCCurve(score=postProb, class=air_quality_data$NOx.GT._factor)
+ROC_lda <- ROCCurve(score=postProb, class=train$NOx.GT._factor)
 plot(ROC_lda$x, ROC_lda$y, type="l", xlab="1-specificity", ylab="sensitivity",
      xaxt="n",yaxt="n", xlim=0:1, ylim=0:1)
 axis(1, seq(0,1,by=0.2), seq(0,1,by=0.2))
@@ -313,8 +332,8 @@ legend("bottomright",c("Logistic regression","LDA"), col=1:2, lty=1:2)
 
 
 # Specific cutoffs:
-( ConfMat_LogRegr <- table(air_quality_data$NOx.GT._factor, cvfitProb >= 0.5) )
-( ConfMat_LDA <- table(air_quality_data$NOx.GT._factor, postProb >= 0.5) )
+( ConfMat_LogRegr <- table(train$NOx.GT._factor, cvfitProb >= 0.5) )
+( ConfMat_LDA <- table(train$NOx.GT._factor, postProb >= 0.5) )
 
 sens.5_LogRegr <- Sens(ConfMat_LogRegr) ; spec.5_LogRegr <- Spec(ConfMat_LogRegr)
 sens.5_LDA <- Sens(ConfMat_LDA) ; spec.5_LDA <- Spec(ConfMat_LDA)
@@ -353,12 +372,13 @@ points(c(1-spec.5_LogRegr, 1-spec_LogRegr, 1-spec.Youd_LogRegr),
 lines(ROC_lda$x, ROC_lda$y, type="l", col=2, lty=2)
 points(c(1-spec.5_LDA, 1-spec_LDA, 1-spec.Youd_LDA),
        c(sens.5_LDA, sens_LDA, sens.Youd_LDA), pch=17, col=c(3,4,6))
-
+legend("topright",c("Logistic regression","LDA"), col=1:2, lty=1:2)
 legend("bottomright",
        legend=c("Cutoffs = 0.5", "Cutoffs achieving the same spec. and sens.", "Cutoffs based on Youden's J statistics"),
        col=c(3,4,6), pch=18)
 # The cutoff based on Youden's statistic seems to be the best in terms of specificity
 # while the cutoff achieving the same specificity and sensitivity seems to be the best in terms of
 # sensitivity. The "default" cutoff "equal to 0.5" seems to be a compromise between the two others.
-
+ROC_LogRegr$z[140]
+ROC_lda$z[145]
 # 
